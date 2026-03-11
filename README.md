@@ -1,160 +1,159 @@
 # 🔥 Fireteam
 
-**Your Seal Team 6 for building products.** A file-system protocol that turns a squad of AI agents into a coordinated strike team.
+**Stop babysitting your AI agents.** Drop a `.fireteam/` folder into your project and 2-6 agents coordinate through files — shared mission, task assignments, handoffs, crash recovery. No server, no database. Just markdown.
 
-No server. No database. No dependencies. Just markdown files that agents read and write.
+Works with Claude Code, Cursor, Aider, Windsurf — anything that reads files.
 
-Works with Claude Code, Cursor, Aider, Windsurf, Codex — anything that can read a file.
+<!-- TODO: Replace with actual demo GIF -->
+<!-- ![Fireteam Demo](assets/demo.gif) -->
+<!-- ↑ 30-second GIF: paste PRD → team lead bootstraps → agents coordinate → handoff works -->
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Claude Skill](https://img.shields.io/badge/Claude-Skill-blue.svg)](#install-the-claude-skill)
 
 ---
 
-## The Problem
+## Quickstart (60 seconds)
 
-You have AI agents that can build. But they can't coordinate. You open 5 terminals, each agent works in isolation, they make conflicting decisions, duplicate work, and forget everything between sessions. You're the bottleneck — manually copying context between tools.
+```bash
+# 1. Clone
+git clone https://github.com/martinnaithani/fireteam.git
+cd fireteam
 
-## The Solution
+# 2. Copy .fireteam/ into your project
+cp -r .fireteam/ /path/to/your-project/.fireteam/
 
-A `.fireteam/` folder in your project root. Structured markdown files that give your agents shared memory, task assignments, handoffs, and a chain of command. Every agent reads the mission at session start. Every agent knows *what* to do, *who else* is doing what, and *why* it matters.
+# 3. Fill in the PRD template
+cp PRD_TEMPLATE.md /path/to/your-project/PRD.md
+# Edit PRD.md with your project details
 
-**If Paperclip is a company, Fireteam is a platoon.** Light. Fast. No infrastructure. Drop it in any project and go.
+# 4. Paste the prompt from START_MISSION.md into your first AI agent
+# Attach your PRD. That agent becomes the Team Lead.
+# It sets up everything: mission, tasks, roster, intel.
 
-```
-your-project/
-├── .fireteam/             ← shared brain
-│   ├── MISSION.md         ← why we're here (every agent reads first)
-│   ├── CONVENTIONS.md     ← rules of engagement
-│   ├── ROSTER.md          ← who's on the team
-│   ├── BOARD.md           ← mission objectives status
-│   ├── INTEL.md           ← curated long-term knowledge
-│   ├── tasks/             ← mission objectives with goal chains
-│   ├── handoffs/          ← structured context transfer
-│   ├── comms/             ← async discussion threads
-│   ├── decisions/         ← architecture decision records
-│   ├── memory/            ← daily field logs
-│   ├── checkpoints/       ← per-agent session state
-│   └── templates/         ← templates for everything
-├── fireteam.sh            ← CLI tool
-├── hq.py                 ← Live command center (server + daemon + UI)
-└── dashboard.py           ← (generated) static dashboard
+# 5. Team Lead gives you onboarding prompts for each operator.
+# Paste into new sessions. Agents read .fireteam/ and start working.
 ```
 
-## Three Entry Points
+**Or install the Claude Skill** — Claude learns the protocol natively. Just say "set up a fireteam for this project" and it handles setup automatically. See [Install the Claude Skill](#install-the-claude-skill).
 
-| Situation | File |
-|-----------|------|
-| **Start a new project** — first agent becomes team lead | [`START_MISSION.md`](START_MISSION.md) + [`PRD_TEMPLATE.md`](PRD_TEMPLATE.md) |
-| **Join an active project** — new agent onboarding | Onboarding prompt at bottom of `START_MISSION.md` |
-| **Resume after crash/interruption** — recovery protocol | [`RESUME_AGENT.md`](RESUME_AGENT.md) |
+---
 
 ## How It Works
 
-### 1. Write a PRD
-Fill in [`PRD_TEMPLATE.md`](PRD_TEMPLATE.md). Minimum viable requirements: problem, solution, features, constraints.
+```
+You write a PRD
+    ↓
+Paste START_MISSION.md into Agent 1 → becomes Team Lead
+    ↓
+Team Lead reads PRD, creates:
+  • MISSION.md (the "why")
+  • Tasks with goal chains (the "what" + "why it matters")  
+  • Roster with SOUL files (who does what)
+  • INTEL.md (key facts every agent needs)
+    ↓
+You open Agent 2, Agent 3... paste onboarding prompt
+    ↓
+Each agent reads .fireteam/, claims a task, does the work
+    ↓
+When done → writes handoff for the next agent
+    ↓
+Next agent reads handoff → picks up seamlessly
+```
 
-### 2. Start the Mission
-Paste the prompt from [`START_MISSION.md`](START_MISSION.md) into your first AI agent. Attach the PRD. That agent becomes the **Team Lead** — it reads your PRD and sets up the entire `.fireteam/` folder: mission brief, task breakdown, roster, and intel.
+**The key insight:** Every AI agent can read and write files. That's the universal capability. Fireteam uses the file system as the coordination layer.
 
-### 3. Deploy the Squad
-The team lead generates onboarding prompts for each role. Open a new session in any tool, paste the prompt. The agent reads `.fireteam/`, sees the mission, finds its assigned objectives, and starts executing.
+---
 
-### 4. Agents Coordinate via Files
-Every task carries a **goal chain** — a direct line from the task back to the mission. Agents always know the *why*, not just the *what*. Handoffs transfer context between agents. Checkpoints save state progressively so crashes don't lose work.
+## What's Inside `.fireteam/`
 
-### 5. Resume After Interruptions
-Agents crash. Context windows fill up. Use [`RESUME_AGENT.md`](RESUME_AGENT.md) — the agent investigates state, verifies what's actually done, writes a recovery checkpoint, then resumes.
+```
+.fireteam/
+├── MISSION.md          ← why we're here (agents read first)
+├── BOARD.md            ← who's working on what
+├── ROSTER.md           ← the squad and their roles
+├── INTEL.md            ← curated facts: stack, APIs, file paths
+├── CONVENTIONS.md      ← rules every agent follows
+├── tasks/OBJ-001.md    ← objectives with goal chains
+├── handoffs/HO-001.md  ← context transfers between agents
+├── comms/              ← async discussions
+├── decisions/          ← architecture decision records
+├── memory/             ← daily field logs (append-only)
+└── checkpoints/        ← per-agent state + identity files
+```
 
-## What's Different About Fireteam
+---
 
-**Borrowed from Paperclip, adapted for zero infrastructure:**
+## Core Concepts
 
-| Concept | How It Works |
-|---------|-------------|
-| **Goal Chains** | Every task carries the full chain: Mission → Goal → Task. Agents always see the *why*. |
-| **Atomic Checkout** | Tasks have a `checked_out_by` field. If another agent has it, don't touch it. No double-work. |
-| **Heartbeat Protocol** | Each agent gets a `HEARTBEAT.md` — a repeatable checklist they run every session: check board, check comms, assess blockers, prioritize. |
-| **Mandatory SOUL** | Every agent gets an identity file defining who they are, what they can do, and their boundaries. Not optional. |
-| **Progressive Checkpoints** | Agents save state every 15-20 min during work, not just at session end. Crashes lose minutes, not hours. |
-| **Two-Tier Memory** | `INTEL.md` for curated durable facts + `memory/YYYY-MM-DD.md` for daily field logs. |
-| **Team Presets** | Pre-built squad configurations: Solo, Duo, Squad (4), Platoon (6+). |
+**Goal Chains** — Every task carries: Mission → Goal → Task → Why It Matters. Agents always see the "why."
+
+**Atomic Checkout** — Tasks have a `checked_out_by` field. If another agent claimed it, you don't touch it. Zero double-work.
+
+**Progressive Checkpoints** — Agents save state every 15 min during work, not just at session end. Crashes lose minutes, not hours.
+
+**Handoff Protocol** — When Agent A finishes work Agent B needs: what was built, file locations, API contracts, what to do next. A good handoff prevents re-work.
+
+**Heartbeat** — Every session starts with a structured read: mission → intel → board → handoffs → comms → "what's my highest priority?"
+
+**Crash Recovery** — Agent dies? Use `RESUME_AGENT.md`. It investigates state, verifies what's actually done, writes a recovery checkpoint, then resumes.
+
+---
+
+## Install the Claude Skill
+
+The Skill teaches Claude the Fireteam protocol natively. No prompt pasting — just say "set up a fireteam" and it works.
+
+```bash
+# The skill is in the skill/ directory
+cd skill/
+zip -r fireteam.zip fireteam/
+# Upload fireteam.zip to Claude.ai → Settings → Skills
+# Or drop the fireteam/ folder into your Claude Code skills directory
+```
+
+**What the Skill does:**
+- Detects project state automatically (greenfield vs existing code vs existing .fireteam/)
+- Greenfield: bootstraps from your PRD
+- Existing codebase: runs recon (scans structure, stack, patterns), then creates tasks that reference real files
+- Handles recovery and onboarding without manual prompt pasting
+
+---
 
 ## CLI
 
 ```bash
-./fireteam.sh task "Build auth API"              # Create objective
-./fireteam.sh handoff "backend" "frontend"       # Create handoff
-./fireteam.sh thread "API contract question"     # Start discussion
-./fireteam.sh decision "Database choice"         # Record decision
-./fireteam.sh log "backend-lead"                 # Add to field log
-./fireteam.sh checkpoint "backend-lead"          # Save agent state
-./fireteam.sh heartbeat "backend-lead"           # Run heartbeat check
-./fireteam.sh recover "backend-lead"             # Diagnose after crash
-./fireteam.sh dashboard                          # Generate visual HQ
-./fireteam.sh status                             # Terminal status
+./fireteam.sh task "Build auth API"         # Create objective
+./fireteam.sh handoff "backend" "frontend"  # Create handoff
+./fireteam.sh checkpoint "backend"          # Save agent state
+./fireteam.sh recover "backend"             # Diagnose after crash
+./fireteam.sh status                        # Terminal status
+./fireteam.sh hq                            # Launch live command center
 ```
 
-## Pro Mode — Live Command Center
+---
 
-One command launches everything:
+## Pro Mode: Live Command Center
 
 ```bash
 ./fireteam.sh hq
+# Opens http://localhost:4040
 ```
 
-Open `http://localhost:4040`:
+A live web dashboard that watches the board and auto-fires Claude Code agents:
 
-**If no mission exists** — you see the Launch Screen:
-1. Paste your PRD into the text area (or click LOAD TEMPLATE for the blank PRD structure)
-2. Pick a model (Opus for strategic planning, Sonnet for speed)
-3. Check "Auto-fire agents after bootstrap" if you want full autonomy
-4. Hit **LAUNCH MISSION**
-
-The team lead agent reads your PRD, creates the mission brief, builds the roster, writes tasks with goal chains, sets up the board — everything. You watch the progress live in a bootstrap overlay with streaming events. Takes 2-5 minutes.
-
-**Once bootstrapped** — the dashboard takes over:
-
-- **Objectives Board** — all tasks grouped by status, with live running indicators, dependency tags, progress bars, and a FIRE button on each backlog task
-- **Controls Bar** — START/STOP daemon, active count, completed, failed, poll interval
-- **Comms Tab** — live event stream (agent deployed, completed, failed, blocked)
-- **Roster Tab** — all operators with live status dots (green = running, red = idle), current model, and what they're working on
-- **Logs Tab** — click any log file to view the full agent output inline
+- **Objectives Board** — tasks grouped by status, FIRE button on each
+- **Auto-fire daemon** — builds dependency graph, spawns agents for ready tasks in parallel
+- **Live comms** — event stream as agents deploy, complete, fail
+- **PRD Launch Screen** — paste a PRD, click LAUNCH MISSION, watch the team lead bootstrap everything
 
 ```bash
-./fireteam.sh hq                 # Launch HQ (daemon + UI at localhost:4040)
-./fireteam.sh hq --no-auto       # UI only — fire agents manually via FIRE buttons
+./fireteam.sh hq                  # Auto-fire mode
+./fireteam.sh hq --no-auto       # Manual — click FIRE on each task
 ./fireteam.sh hq --port 5050     # Custom port
-./fireteam.sh hq --interval 15   # Poll every 15s
-./fireteam.sh dashboard          # Generate static dashboard.html (no server)
 ```
 
-**How auto-fire works:**
-
-```
-Daemon polls .fireteam/ every 30s
-  ├─ Parses all OBJ-*.md + builds dependency graph
-  ├─ Finds READY tasks (backlog + all deps done + not running)
-  ├─ For each: assembles prompt (soul + mission + intel + task + handoffs)
-  ├─ Spawns `claude -p "<prompt>"` in project directory
-  ├─ Independent tasks → parallel (up to 4)
-  ├─ Dependent tasks → wait for predecessors
-  └─ Loops until stopped
-```
-
-**Or fire manually:** Turn off auto-fire (`--no-auto`), then click the FIRE button on any task in the UI. Full control, zero babysitting.
-
-**The full flow (zero to running agents):**
-
-```
-1. ./fireteam.sh hq                    ← starts server at localhost:4040
-2. Open browser → see Launch Screen
-3. Paste PRD → click LAUNCH MISSION
-4. Team Lead bootstraps (2-5 min)      ← watch live progress
-5. Dashboard appears with tasks
-6. Agents auto-fire based on board     ← or click FIRE manually
-7. Watch agents deploy, complete, handoff
-8. Ctrl+C when done
-```
-
-**Configure operators** in `.fireteam/pro.yml`:
+Configure operators in `.fireteam/pro.yml`:
 
 ```yaml
 team-lead:
@@ -164,69 +163,39 @@ team-lead:
 backend:
   cli: claude
   model: sonnet
-
-frontend:
-  cli: claude
-  model: sonnet
 ```
 
-**Requirements:** Python 3.6+, `claude` CLI on PATH.
+Requires: Python 3.6+, `claude` CLI on PATH.
 
-## Team Presets
+---
 
-Drop-in squad configurations in `.fireteam/presets/`:
+## Three Entry Points
 
-| Preset | Agents | Best For |
-|--------|--------|----------|
-| **Solo** | team-lead (you + 1 dev agent) | Quick builds, prototypes |
-| **Duo** | team-lead + full-stack | Landing pages, MVPs |
-| **Squad** | team-lead + backend + frontend + design | Standard web apps |
-| **Platoon** | team-lead + eng-lead + backend + frontend + devops + QA | Complex systems |
+| Situation | What to do |
+|-----------|-----------|
+| **New project** | Fill in `PRD_TEMPLATE.md`, paste `START_MISSION.md` prompt into your first agent |
+| **Existing codebase** | Install the Claude Skill, say "add fireteam to this project" — it runs recon and sets up from reality |
+| **After a crash** | Paste `RESUME_AGENT.md` prompt — agent investigates state before resuming |
 
-## The Heartbeat
-
-Every session, agents run their heartbeat — a structured self-check:
-
-```
-1. Read MISSION.md     → remember why we're here
-2. Read INTEL.md       → recall key facts
-3. Run HEARTBEAT.md    → structured checklist:
-   □ Check BOARD.md for my objectives
-   □ Check comms/ for open threads involving me
-   □ Check handoffs/ for context addressed to me
-   □ Check my checkpoint — am I resuming?
-   □ Assess: what's the highest-priority thing I should do right now?
-4. Execute              → pick up the work
-5. Checkpoint          → save state progressively
-```
-
-## The Goal Chain
-
-Every task answers "why does this matter?"
-
-```
-MISSION: Build PriorityPing into the #1 spam-resistant communication protocol
-  └─ GOAL: Launch waitlist to capture 1,000 early adopters
-      └─ TASK-003: Build signup form with email + wallet fields
-          └─ WHY: This form is the primary conversion point for early adopters
-```
-
-The full chain is embedded in every task file. An agent never has to wonder what they're building toward.
+---
 
 ## Design Principles
 
-- **Files are the protocol.** No server, no database, no runtime. If an agent can read markdown, it's compatible.
-- **Mission over tasks.** Everything traces back to the mission. Agents don't just do work — they understand *why*.
-- **Small teams, big output.** Fireteam is built for 2-6 agents. If you need 20+, look at [Paperclip](https://github.com/paperclipai/paperclip).
-- **Crash-resistant by default.** Progressive checkpoints, recovery protocol, dirty exit handling. Sessions die — work survives.
-- **Zero config.** Copy the folder, paste the prompt, start building. Under 60 seconds to first agent.
+- **Files are the protocol.** No server, no database. If it reads markdown, it's compatible.
+- **Mission over tasks.** Everything traces to the mission. Agents know the *why*.
+- **Crash-resistant.** Progressive checkpoints, recovery protocol. Sessions die — work survives.
+- **Zero config.** Copy folder, paste prompt, go. Under 60 seconds.
+- **Small teams.** 2-6 agents. If you need 20+, use [Paperclip](https://github.com/paperclipai/paperclip).
+
+---
 
 ## Inspired By
 
-- [Paperclip](https://github.com/paperclipai/paperclip) — goal ancestry, atomic checkout, heartbeats, SOUL.md
-- [OpenClaw](https://github.com/openclaw/openclaw) — two-tier memory, workspace isolation, session management
-- [Star Office UI](https://github.com/ringhyacinth/Star-Office-UI) — pixel art dashboard visualization
+- [Paperclip](https://github.com/paperclipai/paperclip) — goal ancestry, atomic checkout, heartbeats
+- [OpenClaw](https://github.com/openclaw/openclaw) — two-tier memory, session management
+
+---
 
 ## License
 
-MIT © 2026 Martin Naithani / Innovation Theory
+MIT © 2026 [Martin Naithani](https://martinnaithani.com) / [Innovation Theory](https://innovationtheory.com)
