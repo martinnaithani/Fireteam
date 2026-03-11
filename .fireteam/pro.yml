@@ -1,0 +1,35 @@
+# Fireteam Pro — Operator CLI Configuration
+#
+# Maps each callsign to a CLI command and model.
+# If an operator is not listed here, defaults to: claude -p
+#
+# Format:
+#   callsign:
+#     cli: claude
+#     model: sonnet
+#     args: --verbose
+#
+# Examples:
+#   team-lead:
+#     cli: claude
+#     model: opus
+#
+#   backend:
+#     cli: claude
+#     model: sonnet
+#
+#   frontend:
+#     cli: claude
+#     model: sonnet
+
+team-lead:
+  cli: claude
+  model: opus
+
+backend:
+  cli: claude
+  model: sonnet
+
+frontend:
+  cli: claude
+  model: sonnet
