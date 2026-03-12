@@ -2,7 +2,7 @@
 
 **Stop babysitting your AI agents.** Fireteam lets 2-6 AI agents coordinate on the same codebase through shared markdown files — mission, tasks, handoffs, crash recovery. No server. No database.
 
-Works with Claude Code, Cursor, Aider, Windsurf — anything that reads files.
+Works with Claude Code, Codex, Antigravity, Cursor, Aider, Windsurf — anything that reads files.
 
 <!-- TODO: Replace with actual demo GIF -->
 <!-- ![Fireteam Demo](assets/demo.gif) -->
@@ -14,7 +14,7 @@ Works with Claude Code, Cursor, Aider, Windsurf — anything that reads files.
 
 ## Install
 
-**Download [`fireteam-skill.zip`](skill/) and upload to Claude:**
+**Download [Download the Claude Skill](https://github.com/martinnaithani/fireteam/releases/latest/download/fireteam-skill.zip) and upload to Claude:**
 
 **Claude.ai:** Settings → Capabilities → Skills → Upload `fireteam-skill.zip`
 
