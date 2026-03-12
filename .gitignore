@@ -5,3 +5,12 @@ Thumbs.db
 *.swp
 *~
 dashboard.html
+
+# Fireteam — sensitive state (opt-in to commit structural files only)
+.fireteam/checkpoints/
+.fireteam/memory/
+.fireteam/INTEL.md
+.fireteam/logs/
+.fireteam/pro.yml
+# To commit structural files (MISSION, BOARD, tasks, handoffs), use:
+#   git add -f .fireteam/MISSION.md .fireteam/BOARD.md .fireteam/tasks/ etc.

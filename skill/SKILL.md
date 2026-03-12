@@ -9,6 +9,20 @@ Fireteam is a file-system-native protocol that lets 2-6 AI agents coordinate on 
 
 **Core mechanic:** Agents coordinate through files. Every agent can read and write files — that's the universal capability. Fireteam uses it as the message bus.
 
+## CRITICAL: Scope Boundaries
+
+**Fireteam operates ONLY within the current working directory.** These rules are non-negotiable:
+
+1. **NEVER navigate to, read, scan, or reference files outside the current working directory.** Not parent directories, not sibling directories, not the user's home folder, not other projects. The project boundary is the current working directory — period.
+
+2. **NEVER search the filesystem for other projects.** If the current directory is empty and the user asked to set up a fireteam, set it up HERE. Do not go looking for code elsewhere.
+
+3. **All `.fireteam/` files are created in the current working directory.** Not in a discovered project, not in a parent directory.
+
+4. **Recon scans ONLY the current working directory.** If the directory is empty, recon finds nothing — that's correct. Proceed as greenfield.
+
+5. **If the current directory seems wrong** (empty when user said "existing project"), ASK the user: "This directory appears empty. Would you like to set up a greenfield fireteam here, or should you navigate to your project first?" Do NOT go exploring.
+
 ## When to Use This Skill
 
 - User wants multiple AI agents working on the same project
@@ -35,26 +49,30 @@ Does .fireteam/ exist and have a populated MISSION.md?
 
 ### Phase 2: Gather Inputs
 
-Use everything available. Do NOT ask the user which flow to use.
+Use everything available **within the current working directory.** Do NOT ask the user which flow to use.
 
-| PRD provided? | Code exists? | Action |
+| PRD provided? | Code exists in CWD? | Action |
 |:---:|:---:|---|
 | Yes | No | **Greenfield.** Plan forward from PRD. |
-| No | Yes | **Existing project.** Run recon first (Phase 3), then ask user for goals. |
-| Yes | Yes | **Phase 2 build.** Recon maps reality, PRD defines what's next. |
-| No | No | **Interview.** Ask: "What are we building? What exists already?" |
+| No | Yes | **Existing project.** Run recon on CWD (Phase 3), then ask user for goals. |
+| Yes | Yes | **Phase 2 build.** Recon maps CWD reality, PRD defines what's next. |
+| No | No | **Empty directory.** Ask the user: "What are we building?" Do NOT search other directories. |
 
-### Phase 3: Recon (when code exists)
+### Phase 3: Recon (when code exists in CWD)
 
-Only runs when there's existing code. Read the codebase structure to understand what's already built. See `references/recon.md` for the full procedure.
+Only runs when there's existing code **in the current working directory.** Read the codebase structure to understand what's already built. See `references/recon.md` for the full procedure.
+
+**SCOPE: Scan ONLY the current working directory. Never traverse up or into sibling directories. If CWD is empty, skip recon entirely — proceed as greenfield.**
 
 Quick version — scan these files:
 - README / docs → what the project claims to be
 - Package files (package.json, requirements.txt, Cargo.toml, go.mod) → stack
 - Directory listing (2 levels deep) → code organization
-- Config files (.env.example, config/, CI files) → deployment, services
+- Config files (.env.example ONLY — never .env, config/, CI files) → deployment, services
 - Entry points (main files, route definitions) → API surface
 - Recent git log (if git, last 20 commits) → recent work
+
+**SECURITY: Never read `.env` files, credential files, or SSH keys. Only read `.env.example`/`.env.sample`. Write variable names to INTEL.md, never values.** See `references/recon.md` for full credential safety rules.
 
 Present findings to the user for confirmation before creating tasks. Output goes into INTEL.md.
 
@@ -79,7 +97,7 @@ Run `scripts/setup.sh` to create the directory structure. Then populate:
 
 **Step 6 — BOARD.md:** Populate with all objectives. Use template from `assets/templates/board.md`.
 
-**Step 7 — INTEL.md:** Seed with key facts. For greenfield: stack, constraints, design direction from PRD. For existing projects: everything discovered in recon — file paths, API routes, database schema, conventions. Use template from `assets/templates/intel.md`.
+**Step 7 — INTEL.md:** Seed with key facts. For greenfield: stack, constraints, design direction from PRD. For existing projects: everything discovered in recon — file paths, API routes, database schema, conventions. **NEVER write actual credential values — only variable names and service descriptions.** Use template from `assets/templates/intel.md`.
 
 **Step 8 — Field log:** Create today's `memory/YYYY-MM-DD.md`. Log setup actions.
 
