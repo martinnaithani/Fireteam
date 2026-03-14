@@ -1,11 +1,13 @@
 # 🔥 Fireteam
 
+![Fireteam Demo](assets/Fireteam_poster.gif)
+
 **Stop babysitting your AI agents.** Fireteam lets 2-6 AI agents coordinate on the same codebase through shared markdown files — mission, tasks, handoffs, crash recovery. No server. No database.
 
 Works with Claude Code, Codex, Antigravity, Cursor, Aider, Windsurf — anything that reads files.
 
 <!-- TODO: Replace with actual demo GIF -->
-<!-- ![Fireteam Demo](assets/demo.gif) -->
+
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Claude Skill](https://img.shields.io/badge/Claude_Skill-Install-blue.svg)](#install)
