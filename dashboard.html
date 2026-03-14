@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fireteam HQ</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#0b0b14;--surface:#10101a;--panel:#141420;--border:#1c2c1c;--border-light:#243024;
+--txt:#c8d0c8;--dim:#506050;--mute:#384038;
+--grn:#33dd66;--grn-dim:#1a4a2a;--red:#ee3344;--red-dim:#3a1418;
+--amb:#ddaa22;--amb-dim:#2a2410;--cyn:#33bbdd;--cyn-dim:#102028;--pur:#aa66dd;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--txt);font-family:'Inter',sans-serif;font-size:13px;line-height:1.6;min-height:100vh}
+code,.mono{font-family:'JetBrains Mono',monospace}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* LAUNCH SCREEN */
+.launch{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:24px}
+.launch.hidden{display:none}
+.launch-icon{font-size:48px;opacity:0.8}
+.launch h1{font-family:'JetBrains Mono',monospace;font-size:28px;color:var(--grn);font-weight:700;letter-spacing:1px}
+.launch p{color:var(--dim);max-width:420px;text-align:center;line-height:1.7}
+.launch-btn{font-family:'JetBrains Mono',monospace;font-size:14px;padding:14px 32px;
+background:var(--grn-dim);border:2px solid var(--grn);color:var(--grn);border-radius:8px;
+cursor:pointer;transition:all 0.2s;letter-spacing:0.5px}
+.launch-btn:hover{background:rgba(51,221,102,0.2);box-shadow:0 0 24px rgba(51,221,102,0.1)}
+.launch-note{font-size:11px;color:var(--mute);font-family:'JetBrains Mono',monospace}
+.launch-error{color:var(--red);font-size:12px;display:none}
+
+/* HEADER */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:12px 24px;
+background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.hdr-left{display:flex;align-items:center;gap:12px}
+.hdr-title{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--grn)}
+.hdr-mission{font-size:12px;color:var(--dim);max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hdr-right{display:flex;align-items:center;gap:12px}
+.hdr-status{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;border-radius:4px;border:1px solid}
+.hdr-status.active{color:var(--grn);border-color:var(--grn-dim);background:rgba(51,221,102,0.06)}
+.hdr-status.planning{color:var(--amb);border-color:var(--amb-dim);background:rgba(221,170,34,0.06)}
+.refresh-btn{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 12px;
+background:var(--panel);border:1px solid var(--border);color:var(--dim);border-radius:4px;cursor:pointer}
+.refresh-btn:hover{border-color:var(--grn);color:var(--grn)}
+.auto-label{font-size:11px;color:var(--mute);display:flex;align-items:center;gap:6px;cursor:pointer}
+.auto-label input{accent-color:var(--grn)}
+.hdr-time{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mute)}
+
+/* STATS BAR */
+.stats{display:flex;gap:1px;padding:0;background:var(--border)}
+.stat{flex:1;background:var(--surface);padding:14px 20px;text-align:center}
+.stat-val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;line-height:1}
+.stat-label{font-size:10px;color:var(--dim);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+
+/* MAIN GRID */
+.main{display:grid;grid-template-columns:1fr 360px;min-height:calc(100vh - 130px)}
+
+/* BOARD */
+.board{padding:20px 24px;overflow-y:auto;border-right:1px solid var(--border)}
+.section-hdr{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;margin:20px 0 10px;
+padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.section-hdr:first-child{margin-top:0}
+.section-count{font-weight:400;color:var(--dim);font-size:11px}
+
+/* TASK ROWS */
+.task{display:grid;grid-template-columns:72px 1fr 60px 80px 70px;align-items:center;gap:8px;
+padding:10px 12px;margin-bottom:4px;background:var(--panel);border:1px solid var(--border);
+border-radius:6px;transition:border-color 0.15s;font-size:12px}
+.task:hover{border-color:var(--border-light)}
+.task.in-progress{border-left:3px solid var(--cyn)}
+.task.blocked{border-left:3px solid var(--red)}
+.task.review{border-left:3px solid var(--amb)}
+.task.done{border-left:3px solid var(--grn);opacity:0.5}
+.task.backlog{border-left:3px solid var(--mute)}
+.t-id{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyn)}
+.t-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-deps{font-size:10px;color:var(--pur);margin-top:2px;font-family:'JetBrains Mono',monospace}
+.t-pri{font-family:'JetBrains Mono',monospace;font-size:10px;padding:2px 6px;border-radius:3px;text-align:center}
+.t-pri.P0{color:var(--red);background:var(--red-dim)}.t-pri.P1{color:var(--amb);background:var(--amb-dim)}.t-pri.P2{color:var(--dim);background:var(--panel)}
+.t-who{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);text-align:right}
+.t-status{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:4px;text-align:center}
+.t-status.backlog{color:var(--mute);background:rgba(255,255,255,0.03)}
+.t-status.in-progress{color:var(--cyn);background:var(--cyn-dim)}
+.t-status.blocked{color:var(--red);background:var(--red-dim)}
+.t-status.review{color:var(--amb);background:var(--amb-dim)}
+.t-status.done{color:var(--grn);background:var(--grn-dim)}
+
+/* SIDEBAR */
+.side{display:flex;flex-direction:column;overflow:hidden;background:var(--surface)}
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:10px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;
+color:var(--mute);cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;background:none;border-top:none;border-left:none;border-right:none}
+.tab.on{color:var(--grn);border-bottom-color:var(--grn)}
+.tab:hover{color:var(--txt)}
+.tab-pane{flex:1;overflow-y:auto;padding:16px;display:none}
+.tab-pane.on{display:block}
+
+/* ROSTER CARDS */
+.agent-card{padding:12px;margin-bottom:8px;background:var(--panel);border:1px solid var(--border);border-radius:6px}
+.agent-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.agent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.agent-dot.active{background:var(--grn);box-shadow:0 0 6px var(--grn)}
+.agent-dot.idle{background:var(--mute)}
+.agent-meta{font-size:11px;color:var(--dim);line-height:1.7}
+.agent-duties{font-size:11px;color:var(--dim);margin-top:4px;padding-left:12px}
+.agent-duties li{margin-bottom:2px}
+
+/* HANDOFF CARDS */
+.handoff-card{padding:12px;margin-bottom:8px;background:var(--panel);border:1px solid var(--border);border-radius:6px}
+.ho-title{font-family:'JetBrains Mono',monospace;font-size:12px;margin-bottom:4px}
+.ho-meta{font-size:11px;color:var(--dim)}
+.ho-status{display:inline-block;font-size:10px;padding:2px 6px;border-radius:3px;margin-left:6px}
+.ho-status.pending{color:var(--amb);background:var(--amb-dim)}
+.ho-status.acknowledged{color:var(--grn);background:var(--grn-dim)}
+
+/* ACTIVITY */
+.activity-entry{padding:8px 10px;margin-bottom:4px;border-left:2px solid var(--border);font-size:11px;line-height:1.6}
+.activity-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--grn);margin-bottom:8px;font-weight:700}
+.activity-session{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cyn);margin:8px 0 4px}
+
+/* INTEL */
+.intel-content{font-size:12px;line-height:1.8;color:var(--txt)}
+.intel-content h2{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--grn);margin:16px 0 6px;font-weight:700}
+.intel-content h2:first-child{margin-top:0}
+.intel-content table{width:100%;border-collapse:collapse;margin:8px 0}
+.intel-content td,.intel-content th{padding:4px 8px;border:1px solid var(--border);font-size:11px}
+.intel-content code{background:var(--panel);padding:1px 4px;border-radius:2px;font-size:11px}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:32px;color:var(--mute);font-size:12px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+.main{grid-template-columns:1fr}
+.side{max-height:50vh;border-top:1px solid var(--border)}
+.task{grid-template-columns:64px 1fr 50px 70px}
+.t-who{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- LAUNCH SCREEN -->
+<div class="launch" id="launch">
+  <div class="launch-icon">🔥</div>
+  <h1>FIRETEAM HQ</h1>
+  <p>Open your project's <code>.fireteam/</code> folder to see the live mission status. No server needed — everything stays in your browser.</p>
+  <button class="launch-btn" id="openBtn" onclick="openFolder()">Open .fireteam/ Folder</button>
+  <div class="launch-note">Uses File System Access API · Chrome / Edge required</div>
+  <div class="launch-error" id="launchErr"></div>
+</div>
+
+<!-- DASHBOARD (hidden until folder is loaded) -->
+<div id="dashboard" style="display:none">
+
+<div class="hdr">
+  <div class="hdr-left">
+    <span class="hdr-title">🔥 FIRETEAM HQ</span>
+    <span class="hdr-mission" id="hdrMission"></span>
+  </div>
+  <div class="hdr-right">
+    <span class="hdr-status" id="hdrStatus"></span>
+    <label class="auto-label"><input type="checkbox" id="autoRefresh" onchange="toggleAuto()"> Auto 5s</label>
+    <button class="refresh-btn" onclick="refresh()">↻ Refresh</button>
+    <span class="hdr-time" id="hdrTime"></span>
+  </div>
+</div>
+
+<div class="stats" id="statsBar"></div>
+
+<div class="main">
+  <div class="board" id="boardPane"></div>
+  <div class="side">
+    <div class="tabs">
+      <button class="tab on" onclick="showTab('roster',this)">Roster</button>
+      <button class="tab" onclick="showTab('handoffs',this)">Handoffs</button>
+      <button class="tab" onclick="showTab('activity',this)">Activity</button>
+      <button class="tab" onclick="showTab('intel',this)">Intel</button>
+    </div>
+    <div class="tab-pane on" id="tab-roster"></div>
+    <div class="tab-pane" id="tab-handoffs"></div>
+    <div class="tab-pane" id="tab-activity"></div>
+    <div class="tab-pane" id="tab-intel"></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+let dirHandle = null;
+let autoInterval = null;
+
+// ─── FILE SYSTEM ACCESS ───
+
+async function openFolder() {
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+    document.getElementById('launch').classList.add('hidden');
+    document.getElementById('dashboard').style.display = '';
+    await refresh();
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      document.getElementById('launchErr').style.display = 'block';
+      document.getElementById('launchErr').textContent = 'Error: ' + e.message;
+    }
+  }
+}
+
+async function readFile(path) {
+  try {
+    const parts = path.split('/').filter(Boolean);
+    let handle = dirHandle;
+    for (let i = 0; i < parts.length - 1; i++) {
+      handle = await handle.getDirectoryHandle(parts[i]);
+    }
+    const fileHandle = await handle.getFileHandle(parts[parts.length - 1]);
+    const file = await fileHandle.getFile();
+    return await file.text();
+  } catch { return ''; }
+}
+
+async function listFiles(path, ext) {
+  try {
+    const parts = path.split('/').filter(Boolean);
+    let handle = dirHandle;
+    for (const p of parts) handle = await handle.getDirectoryHandle(p);
+    const files = [];
+    for await (const [name, entry] of handle) {
+      if (entry.kind === 'file' && (!ext || name.endsWith(ext))) {
+        const file = await entry.getFile();
+        const text = await file.text();
+        files.push({ name, text });
+      }
+    }
+    return files.sort((a, b) => a.name.localeCompare(b.name));
+  } catch { return []; }
+}
+
+// ─── PARSERS ───
+
+function ex(pattern, text, def = '') {
+  const m = text.match(pattern);
+  return m ? m[1].trim() : def;
+}
+
+function parseMission(text) {
+  const mission = ex(/## Mission\s*\n([\s\S]*?)(?=\n##|\Z)/m, text, '').split('\n')[0].trim();
+  const status = ex(/\*\*Status:\*\*\s*(\S+)/, text, 'Planning');
+  return { mission, status };
+}
+
+function parseRoster(text) {
+  const agents = [];
+  const blocks = text.split(/^### /m).slice(1);
+  for (const b of blocks) {
+    const lines = b.trim().split('\n');
+    const name = lines[0].trim();
+    let id = '', duties = [];
+    let inDuties = false;
+    for (const l of lines.slice(1)) {
+      const m = l.match(/\*\*Callsign:\*\*\s*`([^`]+)`/);
+      if (m) id = m[1];
+      if (l.includes('Duties') || l.includes('Responsibilities')) { inDuties = true; continue; }
+      if (inDuties && l.trim().startsWith('- ')) duties.push(l.trim().slice(2));
+      else if (inDuties && l.trim() && !l.trim().startsWith('-')) inDuties = false;
+    }
+    if (id) agents.push({ name, id, duties });
+  }
+  return agents;
+}
+
+function parseTasks(files) {
+  return files.map(f => {
+    const t = { id: f.name.replace('.md',''), raw: f.text };
+    t.status = ex(/\*\*Status:\*\*\s*(\S+)/, f.text, 'backlog');
+    t.assignee = ex(/\*\*Checked out by:\*\*\s*(\S+)/, f.text, '');
+    t.priority = ex(/\*\*Priority:\*\*\s*(\S+)/, f.text, 'P2');
+    t.title = ex(/#\s*OBJ-\d+:\s*(.*)/, f.text, f.name);
+    const depRaw = ex(/## Depends On\s*\n\s*([\s\S]*?)(?=\n##|$)/, f.text, 'none');
+    t.depends = depRaw.toLowerCase() === 'none' ? [] : [...depRaw.matchAll(/OBJ-\d+/g)].map(m => m[0]);
+    const checks = [...f.text.matchAll(/- \[([ xX])\]/g)];
+    t.total = checks.length;
+    t.done = checks.filter(c => c[1].toLowerCase() === 'x').length;
+    if (!t.assignee || t.assignee.startsWith('<!--')) {
+      t.assignee = ex(/\*\*Checked out by:\*\*\s*([^<\n]+)/, f.text, '');
+    }
+    return t;
+  });
+}
+
+function parseHandoffs(files) {
+  return files.map(f => ({
+    id: f.name.replace('.md',''),
+    title: ex(/#\s*HO-\d+:\s*(.*)/, f.text, f.name),
+    status: ex(/\*\*Status:\*\*\s*(\S+)/, f.text, 'pending'),
+    from: ex(/\*\*From:\*\*\s*(\S+)/, f.text, ''),
+    to: ex(/\*\*To:\*\*\s*(\S+)/, f.text, ''),
+    summary: ex(/## Summary\s*\n([\s\S]*?)(?=\n##|$)/, f.text, '').trim().slice(0, 200),
+  }));
+}
+
+function parseLogs(files) {
+  return files.filter(f => f.name !== '.gitkeep').map(f => {
+    const sessions = [];
+    const blocks = f.text.split(/^## Session:/m).slice(1);
+    for (const b of blocks) {
+      const lines = b.trim().split('\n');
+      sessions.push({ header: lines[0].trim(), content: b.trim().slice(0, 300) });
+    }
+    return { date: f.name.replace('.md',''), sessions };
+  }).sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function parseCheckpoints(files) {
+  const ckpts = {};
+  for (const f of files) {
+    if (f.name.endsWith('-soul.md') || f.name.endsWith('-heartbeat.md') || f.name === '.gitkeep') continue;
+    const id = f.name.replace('.md','');
+    ckpts[id] = {
+      focus: ex(/\*\*Current focus:\*\*\s*(.*)/, f.text, ''),
+      progress: ex(/\*\*Completion:\*\*\s*(.*)/, f.text, ''),
+      task: ex(/\*\*Objective:\*\*\s*(.*)/, f.text, ''),
+    };
+  }
+  return ckpts;
+}
+
+// ─── RENDER ───
+
+async function refresh() {
+  const missionText = await readFile('MISSION.md');
+  const rosterText = await readFile('ROSTER.md');
+  const intelText = await readFile('INTEL.md');
+  const taskFiles = await listFiles('tasks', '.md');
+  const handoffFiles = await listFiles('handoffs', '.md');
+  const logFiles = await listFiles('memory', '.md');
+  const ckptFiles = await listFiles('checkpoints', '.md');
+
+  const mission = parseMission(missionText);
+  const agents = parseRoster(rosterText);
+  const tasks = parseTasks(taskFiles);
+  const handoffs = parseHandoffs(handoffFiles);
+  const logs = parseLogs(logFiles);
+  const ckpts = parseCheckpoints(ckptFiles);
+
+  // Header
+  document.getElementById('hdrMission').textContent = mission.mission || 'No mission set';
+  const statusEl = document.getElementById('hdrStatus');
+  statusEl.textContent = mission.status;
+  statusEl.className = 'hdr-status ' + (mission.status === 'Active' ? 'active' : 'planning');
+  document.getElementById('hdrTime').textContent = new Date().toLocaleTimeString();
+
+  // Stats
+  const total = tasks.length;
+  const ip = tasks.filter(t => t.status === 'in-progress').length;
+  const done = tasks.filter(t => t.status === 'done').length;
+  const blocked = tasks.filter(t => t.status === 'blocked').length;
+  const review = tasks.filter(t => t.status === 'review').length;
+
+  document.getElementById('statsBar').innerHTML = [
+    [total, 'Objectives', '--cyn'],
+    [ip, 'Active', '--cyn'],
+    [review, 'In Review', '--amb'],
+    [blocked, 'Blocked', '--red'],
+    [done, 'Complete', '--grn'],
+    [agents.length, 'Operators', '--pur'],
+    [handoffs.length, 'Handoffs', '--amb'],
+  ].map(([v,l,c]) => `<div class="stat"><div class="stat-val" style="color:var(${c})">${v}</div><div class="stat-label">${l}</div></div>`).join('');
+
+  // Board
+  renderBoard(tasks);
+
+  // Roster
+  renderRoster(agents, tasks, ckpts);
+
+  // Handoffs
+  renderHandoffs(handoffs);
+
+  // Activity
+  renderActivity(logs);
+
+  // Intel
+  renderIntel(intelText);
+}
+
+function renderBoard(tasks) {
+  const groups = {
+    'in-progress': { label: 'Active', tasks: [] },
+    'blocked': { label: 'Blocked', tasks: [] },
+    'backlog': { label: 'Backlog', tasks: [] },
+    'review': { label: 'In Review', tasks: [] },
+    'done': { label: 'Complete', tasks: [] },
+  };
+  for (const t of tasks) (groups[t.status] || groups.backlog).tasks.push(t);
+
+  let html = '';
+  for (const [status, g] of Object.entries(groups)) {
+    if (!g.tasks.length) continue;
+    html += `<div class="section-hdr" style="color:var(${{'in-progress':'--cyn','blocked':'--red','backlog':'--dim','review':'--amb','done':'--grn'}[status] || '--dim'})">${g.label}<span class="section-count">${g.tasks.length}</span></div>`;
+    for (const t of g.tasks) {
+      const pct = t.total ? Math.round(t.done / t.total * 100) : 0;
+      const deps = t.depends.length ? `<div class="t-deps">← ${esc(t.depends.join(', '))}</div>` : '';
+      html += `<div class="task ${status}">
+        <span class="t-id">${esc(t.id)}</span>
+        <div><div class="t-title">${esc(t.title)}</div>${deps}</div>
+        <span class="t-pri ${t.priority}">${t.priority}</span>
+        <span class="t-who">${esc(t.assignee || '—')}</span>
+        <span class="t-status ${status}">${status === 'in-progress' ? 'active' : status}</span>
+      </div>`;
+    }
+  }
+  if (!tasks.length) html = '<div class="empty">No objectives yet</div>';
+  document.getElementById('boardPane').innerHTML = html;
+}
+
+function renderRoster(agents, tasks, ckpts) {
+  if (!agents.length) { document.getElementById('tab-roster').innerHTML = '<div class="empty">No roster</div>'; return; }
+  const activeTasks = {};
+  for (const t of tasks) if (t.status === 'in-progress' && t.assignee) activeTasks[t.assignee] = t.id;
+
+  document.getElementById('tab-roster').innerHTML = agents.map(a => {
+    const isActive = a.id in activeTasks;
+    const ck = ckpts[a.id] || {};
+    return `<div class="agent-card">
+      <div class="agent-name"><span class="agent-dot ${isActive ? 'active' : 'idle'}"></span>${esc(a.name)} <span style="color:var(--dim);font-weight:400;font-size:11px">${esc(a.id)}</span></div>
+      <div class="agent-meta">
+        ${isActive ? `Working on: <span style="color:var(--cyn)">${activeTasks[a.id]}</span>` : ck.focus ? `Last: ${esc(ck.focus)}` : 'Idle'}
+        ${ck.progress ? `<br>Progress: ${esc(ck.progress)}` : ''}
+      </div>
+      ${a.duties.length ? `<ul class="agent-duties">${a.duties.slice(0,4).map(d => `<li>${esc(d)}</li>`).join('')}</ul>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderHandoffs(handoffs) {
+  if (!handoffs.length) { document.getElementById('tab-handoffs').innerHTML = '<div class="empty">No handoffs yet</div>'; return; }
+  document.getElementById('tab-handoffs').innerHTML = handoffs.map(h =>
+    `<div class="handoff-card">
+      <div class="ho-title">${esc(h.id)}: ${esc(h.title)}<span class="ho-status ${h.status}">${h.status}</span></div>
+      <div class="ho-meta">${esc(h.from)} → ${esc(h.to)}</div>
+      ${h.summary ? `<div style="margin-top:6px;font-size:11px;color:var(--dim)">${esc(h.summary)}</div>` : ''}
+    </div>`
+  ).join('');
+}
+
+function renderActivity(logs) {
+  if (!logs.length) { document.getElementById('tab-activity').innerHTML = '<div class="empty">No field logs</div>'; return; }
+  let html = '';
+  for (const log of logs.slice(0, 5)) {
+    html += `<div class="activity-date">${esc(log.date)}</div>`;
+    if (!log.sessions.length) html += '<div class="activity-entry" style="color:var(--mute)">No sessions logged</div>';
+    for (const s of log.sessions.slice(0, 5)) {
+      html += `<div class="activity-session">${esc(s.header)}</div>`;
+      html += `<div class="activity-entry">${esc(s.content.slice(0, 200))}${s.content.length > 200 ? '...' : ''}</div>`;
+    }
+  }
+  document.getElementById('tab-activity').innerHTML = html;
+}
+
+function renderIntel(text) {
+  if (!text.trim()) { document.getElementById('tab-intel').innerHTML = '<div class="empty">No intel</div>'; return; }
+  // Simple markdown-to-html for intel
+  let html = text
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/^\| (.+)/gm, (m) => '<tr>' + m.split('|').filter(Boolean).map(c => `<td>${c.trim()}</td>`).join('') + '</tr>')
+    .replace(/^- (.+)$/gm, '• $1<br>')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/(<tr>.*<\/tr>\n?)+/g, (m) => `<table>${m}</table>`);
+  // Remove frontmatter-style lines
+  html = html.replace(/^>.*<br>/gm, '');
+  document.getElementById('tab-intel').innerHTML = `<div class="intel-content">${html}</div>`;
+}
+
+// ─── UTILS ───
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s || ''; return d.innerHTML; }
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  btn.classList.add('on');
+}
+
+function toggleAuto() {
+  if (document.getElementById('autoRefresh').checked) {
+    autoInterval = setInterval(refresh, 5000);
+  } else {
+    clearInterval(autoInterval);
+    autoInterval = null;
+  }
+}
+
+// Check browser support
+if (!('showDirectoryPicker' in window)) {
+  document.getElementById('openBtn').disabled = true;
+  document.getElementById('openBtn').textContent = 'Not Supported';
+  document.getElementById('launchErr').style.display = 'block';
+  document.getElementById('launchErr').textContent = 'File System Access API requires Chrome or Edge. Firefox and Safari are not supported.';
+}
+</script>
+</body>
+</html>
