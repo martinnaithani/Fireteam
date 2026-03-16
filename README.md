@@ -1,13 +1,15 @@
 # 🔥 Fireteam
 
+![Fireteam Demo](assets/Fireteam_poster.gif)
+
 **Your AI agent forgets everything when the session ends. Fireteam fixes that.**
 
 A `.fireteam/` folder in your project gives your AI agent persistent memory — mission context, task state, progress checkpoints, and structured notes that survive session restarts, context limits, and crashes. No server. No database. Just markdown files.
 
-Works with Claude Code, Cursor, Aider, Windsurf — anything that reads files.
+Works with Claude Code, Codex, Antigravity, Cursor, Aider, Windsurf — anything that reads files.
 
 <!-- TODO: Replace with actual demo GIF -->
-<!-- ![Fireteam Demo](assets/demo.gif) -->
+
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Claude Skill](https://img.shields.io/badge/Claude_Skill-Install-blue.svg)](#install)
@@ -18,7 +20,7 @@ Works with Claude Code, Cursor, Aider, Windsurf — anything that reads files.
 
 ## Install
 
-**Download [`fireteam-skill.zip`](skill/) and upload to Claude:**
+**Download [Download the Claude Skill](https://github.com/martinnaithani/fireteam/releases/latest/download/fireteam-skill.zip) and upload to Claude:**
 
 **Claude.ai:** Settings → Capabilities → Skills → Upload `fireteam-skill.zip`
 
