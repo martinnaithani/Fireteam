@@ -27,7 +27,7 @@ fireteam/
 ├── START_MISSION.md       ← Bootstrap prompt (creates Team Lead)
 ├── RESUME_AGENT.md        ← Recovery prompt (after crashes)
 ├── fireteam.sh            ← CLI tool (portable bash)
-├── hq.py                 ← Live Command Center (HTTP server + daemon + dashboard)
+├── dashboard.html         ← Visual status dashboard (open in Chrome/Edge)
 ├── LICENSE                ← MIT
 ├── .gitignore
 └── .fireteam/             ← THE PROTOCOL (users copy this into projects)
@@ -44,7 +44,6 @@ fireteam/
     ├── memory/            ← YYYY-MM-DD.md field logs
     ├── checkpoints/       ← [callsign].md + soul + heartbeat files
     ├── presets/           ← Team configurations (Solo, Duo, Squad, Platoon)
-    ├── pro.yml            ← Pro Mode config (callsign → CLI mapping)
     └── templates/         ← 8 templates (task, handoff, thread, decision,
                               fieldlog, checkpoint, soul, heartbeat)
 ```

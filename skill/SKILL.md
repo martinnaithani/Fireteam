@@ -1,13 +1,17 @@
 ---
 name: fireteam
-description: "Multi-agent coordination protocol for AI coding tools. Sets up a file-based system so 2-6 AI agents (Claude Code, Cursor, Aider, etc.) can work on the same codebase without conflicts. Use this skill whenever the user mentions coordinating agents, setting up a fireteam, multi-agent projects, splitting work across AI agents, adding coordination to an existing project, creating handoffs between agents, writing checkpoints, resuming after crashes, or managing a team of AI coding agents. Also use when the user says 'bootstrap from PRD', 'onboard agents', 'coordinate my agents', or 'set up agent coordination'. Do NOT use for single-agent coding tasks, general project management without AI agents, or questions about military fire teams."
+description: "Persistent memory and task coordination for AI coding sessions. Creates a .fireteam/ folder with mission context, task state, checkpoints, and handoff notes that survive session restarts, context limits, and crashes. Use this skill whenever the user wants to set up a fireteam, continue a fireteam, resume after a crash, add fireteam to a project, coordinate agents, split work across sessions, write checkpoints, create handoffs, or manage multi-session AI coding workflows. Also triggers on 'bootstrap from PRD', 'coordinate my agents', or 'pick up where I left off'. Do NOT use for single-turn coding questions, general project management without AI agents, or questions about military fire teams."
 ---
 
-# Fireteam — Multi-Agent Coordination Protocol
+# Fireteam — Persistent Memory for AI Coding Sessions
 
-Fireteam is a file-system-native protocol that lets 2-6 AI agents coordinate on the same codebase. No server, no database — just structured markdown files in a `.fireteam/` folder that agents read at session start and write during work.
+Fireteam gives AI coding agents a memory that survives session restarts, context limits, and crashes. It uses a `.fireteam/` folder of structured markdown files — mission context, task state, progress checkpoints, and handoff notes — that the agent reads at session start and writes during work.
 
-**Core mechanic:** Agents coordinate through files. Every agent can read and write files — that's the universal capability. Fireteam uses it as the message bus.
+**Primary use case:** One agent working across multiple sessions on the same project. `.fireteam/` files carry context forward so the agent never starts from zero.
+
+**Secondary use case:** 2-6 agents coordinating on the same codebase through shared `.fireteam/` files — task claims, handoffs, and conflict prevention.
+
+**Core mechanic:** Every AI agent can read and write files. Fireteam uses the file system as the persistent memory layer.
 
 ## CRITICAL: Scope Boundaries
 
@@ -25,12 +29,17 @@ Fireteam is a file-system-native protocol that lets 2-6 AI agents coordinate on 
 
 ## When to Use This Skill
 
+**Session continuity (primary):**
+- User wants their agent to remember context across sessions
+- User says "continue my fireteam" or "pick up where I left off"
+- User says "set up a fireteam" for a new or existing project
+- User wants to save progress: "write a checkpoint"
+- User is resuming after a crash or context limit
+
+**Multi-agent coordination (secondary):**
 - User wants multiple AI agents working on the same project
-- User says "set up a fireteam" or "coordinate my agents"
-- User has a PRD and wants to split work across agents
-- User has an existing codebase and wants to add multi-agent coordination
-- User needs to create a handoff, write a checkpoint, or resume after a crash
-- User wants to bootstrap a new project from a PRD with multiple agents
+- User needs to create a handoff between agents
+- User says "coordinate my agents" or "onboard agents"
 
 ## Adaptive Entry Point
 
@@ -109,11 +118,15 @@ Run `scripts/setup.sh` to create the directory structure. Then populate:
 3. Which operator to deploy next
 4. The onboarding prompt for that operator
 
-### Phase 5: Onboarding & Operations
+### Phase 5: Execute & Continue
 
-**For the Team Lead (first agent):** You ARE the Team Lead after completing Phase 4.
+**Single agent (default):** After completing setup, begin working on the highest-priority task from the board. Work through tasks sequentially — when one finishes, write a handoff note (what was built, API contracts, file paths), update the board, and start the next ready task. Checkpoint every 15 minutes.
 
-**Onboarding prompt for subsequent operators:**
+When the session ends (context limit, crash, user stops), everything is saved in `.fireteam/`. The next session reads the checkpoint, handoff notes, and board — picks up immediately.
+
+**Multiple agents (when the user wants parallelism):** Generate onboarding prompts for each additional agent. The user pastes these into separate terminals. Each agent reads `.fireteam/`, claims its assigned tasks, and works independently. Handoffs transfer context between agents.
+
+Onboarding prompt for additional agents:
 ```
 You are the [ROLE] operator. Callsign: [callsign].
 Read these files in order:
@@ -214,3 +227,16 @@ For full protocol rules: `references/conventions.md`
 For recovery after crashes: `references/recovery.md`
 For codebase recon procedure: `references/recon.md`
 For team composition presets: `references/presets.md`
+
+## Fireteam Dashboard
+
+The skill includes `assets/dashboard.html` — a visual status dashboard. After setting up `.fireteam/`, tell the user:
+
+"Open `dashboard.html` in Chrome or Edge. Click 'Open .fireteam/ Folder' and select your project's `.fireteam/` directory. You'll see the task board, roster, handoffs, and activity in real-time."
+
+The dashboard reads `.fireteam/` files directly via the browser's File System Access API. No server needed. Auto-refresh available (every 5 seconds). Chrome/Edge only — Firefox and Safari don't support the required API.
+
+When setting up a fireteam, copy `assets/dashboard.html` into the project root so it's easy to find:
+```bash
+cp assets/dashboard.html [project-root]/fireteam-dashboard.html
+```

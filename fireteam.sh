@@ -195,26 +195,17 @@ cmd_status() {
   echo ""
 }
 
-cmd_hq() {
-  local sd; sd="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local hp=""
-  for c in "$sd/hq.py" "$(dirname "$FT")/hq.py"; do [ -f "$c" ] && hp="$c" && break; done
-  if [ -z "$hp" ]; then echo "Error: hq.py not found." >&2; exit 1; fi
-  shift 2>/dev/null || true
-  python3 "$hp" "$@"
-}
-
-cmd_pro() {
-  # Legacy alias — just launches HQ
-  cmd_hq "$@"
-}
-
 cmd_dashboard() {
+  local project_root; project_root="$(dirname "$FT")"
   local sd; sd="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  local hp=""
-  for c in "$sd/hq.py" "$(dirname "$FT")/hq.py"; do [ -f "$c" ] && hp="$c" && break; done
-  if [ -z "$hp" ]; then echo "Error: hq.py not found." >&2; exit 1; fi
-  python3 "$hp" --generate
+  local dp=""
+  for c in "$project_root/dashboard.html" "$sd/dashboard.html"; do [ -f "$c" ] && dp="$c" && break; done
+  if [ -z "$dp" ]; then echo "Error: dashboard.html not found." >&2; exit 1; fi
+  echo "Open in Chrome/Edge: $dp"
+  # Try to open in browser
+  if command -v open &>/dev/null; then open "$dp"
+  elif command -v xdg-open &>/dev/null; then xdg-open "$dp"
+  else echo "(open manually)"; fi
 }
 
 cmd_integrate() {
@@ -411,15 +402,8 @@ cmd_help() {
   fireteam heartbeat   "callsign"         Create heartbeat file
   fireteam soul        "callsign"         Create identity file
   fireteam recover     "callsign"         Diagnose after crash
-  fireteam dashboard                      Generate visual HQ
+  fireteam dashboard                      Open visual dashboard
   fireteam status                         Terminal status
-
-  PRO MODE (auto-fire agents):
-  fireteam hq                             Launch live command center (UI + daemon)
-  fireteam hq --no-auto                   UI only, fire agents manually
-  fireteam hq --port 5050                 Custom port
-  fireteam pro                            Alias for fireteam hq
-  fireteam dashboard                      Generate static dashboard.html
 
   INTEGRATIONS:
   fireteam integrate claude-code          CLAUDE.md + hooks + settings
@@ -440,8 +424,6 @@ case "${1:-help}" in
   heartbeat)  shift; cmd_heartbeat "$@" ;;
   soul)       shift; cmd_soul "$@" ;;
   recover)    shift; cmd_recover "$@" ;;
-  hq)         cmd_hq "$@" ;;
-  pro)        cmd_pro "$@" ;;
   integrate)  shift; cmd_integrate "$@" ;;
   dashboard)  cmd_dashboard ;;
   status)     cmd_status ;;
