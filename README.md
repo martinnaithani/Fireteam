@@ -170,6 +170,35 @@ cp fireteam/PRD_TEMPLATE.md /path/to/your-project/PRD.md
 
 ---
 
+## Tool Integrations
+
+Fireteam works with any AI coding tool. The `integrate` command generates tool-specific config files that teach your tool the protocol:
+
+```bash
+./fireteam.sh integrate claude-code   # CLAUDE.md + hooks + .claude/settings.json
+./fireteam.sh integrate cursor        # .cursor/rules/fireteam.mdc
+./fireteam.sh integrate aider         # CONVENTIONS.md
+./fireteam.sh integrate windsurf      # .windsurfrules
+```
+
+**Claude Code integration** includes lifecycle hooks that run automatically:
+- **Session start** → prints a mission briefing (objectives, handoffs, open threads)
+- **Session end** → reminds agent to checkpoint and update the field log
+
+No manual heartbeat needed — the hooks handle situational awareness.
+
+---
+
+## Using with Everything Claude Code (ECC)
+
+[Everything Claude Code](https://github.com/affaan-m/everything-claude-code) optimizes individual Claude Code sessions — skills, hooks, rules, agents. Fireteam coordinates BETWEEN sessions. They solve different problems and work well together.
+
+**ECC makes each agent better.** Fireteam makes agents work together.
+
+Use ECC in each terminal for single-session performance. Use `.fireteam/` for cross-session coordination. Run `./fireteam.sh integrate claude-code` to generate the CLAUDE.md and hooks that bridge them.
+
+---
+
 ## Design Principles
 
 - **Files are the protocol.** If it reads markdown, it's compatible. No server, no database.
@@ -183,6 +212,7 @@ cp fireteam/PRD_TEMPLATE.md /path/to/your-project/PRD.md
 
 - [Paperclip](https://github.com/paperclipai/paperclip) — goal ancestry, atomic checkout, heartbeats
 - [OpenClaw](https://github.com/openclaw/openclaw) — two-tier memory, session management
+- [Everything Claude Code](https://github.com/affaan-m/everything-claude-code) — hook lifecycle patterns, token budget awareness
 
 ## License
 

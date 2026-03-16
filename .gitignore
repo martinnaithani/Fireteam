@@ -4,6 +4,8 @@ Thumbs.db
 .idea/
 *.swp
 *~
+dashboard.html
+
 # Fireteam — sensitive state (opt-in to commit structural files only)
 .fireteam/checkpoints/
 .fireteam/memory/

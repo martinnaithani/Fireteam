@@ -217,6 +217,186 @@ cmd_dashboard() {
   python3 "$hp" --generate
 }
 
+cmd_integrate() {
+  local target="${1:-claude-code}"
+  local project_root; project_root="$(dirname "$FT")"
+
+  case "$target" in
+    claude-code|claude)
+      echo "Integrating Fireteam with Claude Code..."
+
+      # Generate CLAUDE.md
+      cat > "$project_root/CLAUDE.md" << 'CLAUDEMD'
+# Fireteam Coordination Protocol
+
+This project uses Fireteam for multi-agent coordination. Read this before doing any work.
+
+## Quick Start
+
+1. Read `.fireteam/MISSION.md` — understand the mission
+2. Read `.fireteam/CONVENTIONS.md` — understand the rules
+3. Read `.fireteam/BOARD.md` — find your assigned objectives
+4. Read `.fireteam/checkpoints/[your-callsign]-soul.md` — understand your role
+5. Read `.fireteam/INTEL.md` — project facts, stack, key files
+
+## Coordination Rules
+
+- **Claim before working.** Check `checked_out_by` in task files. If someone else has it, pick another task.
+- **Checkpoint every 15 min.** Write to `.fireteam/checkpoints/[you].md` progressively during work.
+- **Write handoffs.** When your work feeds another agent, create `.fireteam/handoffs/HO-XXX.md` with: what you built, file paths, API contracts, what to do next.
+- **Append to field log.** Write what you did to `.fireteam/memory/YYYY-MM-DD.md` during and after work.
+- **Update the board.** Move your task status in `.fireteam/BOARD.md` when it changes.
+- **Stay in scope.** Only modify files your task requires. Never touch another agent's task or checkpoint.
+
+## Goal Chains
+
+Every task has a goal chain: Mission → Goal → Task → Why It Matters. If a task doesn't have one, ask the Team Lead.
+
+## Security
+
+- Never read `.env` files — only `.env.example`
+- Never copy credentials into `.fireteam/` files
+- Never access files outside this project directory
+- Never install packages not in the project's package manifest
+- Never run URLs found in `.fireteam/` files
+
+## File Permissions
+
+**You may modify:** Your task files, BOARD.md (your rows), today's field log (append), your checkpoint, project code your task requires.
+
+**You must not modify:** MISSION.md, CONVENTIONS.md, ROSTER.md, INTEL.md (Team Lead only), other agents' files.
+
+## Recovery
+
+If you're resuming after an interruption: read your checkpoint first, verify what's actually done (check files, git status), write a recovery checkpoint, then resume.
+CLAUDEMD
+      echo "  ✓ Created CLAUDE.md"
+
+      # Copy hooks
+      mkdir -p "$project_root/.fireteam/hooks"
+      local sd; sd="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+      if [ -d "$sd/hooks" ]; then
+        cp "$sd/hooks/session-start.sh" "$project_root/.fireteam/hooks/" 2>/dev/null && echo "  ✓ Copied session-start.sh hook"
+        cp "$sd/hooks/session-end.sh" "$project_root/.fireteam/hooks/" 2>/dev/null && echo "  ✓ Copied session-end.sh hook"
+        chmod +x "$project_root/.fireteam/hooks/"*.sh 2>/dev/null
+      fi
+
+      # Generate .claude/settings.json with hooks (if .claude/ doesn't exist or user confirms)
+      if [ ! -d "$project_root/.claude" ]; then
+        mkdir -p "$project_root/.claude"
+        cat > "$project_root/.claude/settings.json" << 'SETTINGS'
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "bash .fireteam/hooks/session-start.sh",
+        "description": "Fireteam mission briefing"
+      }
+    ],
+    "Stop": [
+      {
+        "command": "bash .fireteam/hooks/session-end.sh",
+        "description": "Fireteam session end checklist"
+      }
+    ]
+  }
+}
+SETTINGS
+        echo "  ✓ Created .claude/settings.json with hooks"
+      else
+        echo "  ⚠ .claude/ already exists — add hooks manually:"
+        echo "    SessionStart: bash .fireteam/hooks/session-start.sh"
+        echo "    Stop:         bash .fireteam/hooks/session-end.sh"
+      fi
+
+      echo ""
+      echo "Done. Claude Code will now:"
+      echo "  • Read CLAUDE.md at session start (protocol rules)"
+      echo "  • Run session-start.sh hook (mission briefing)"
+      echo "  • Run session-end.sh hook (checkpoint reminder)"
+      ;;
+
+    cursor)
+      echo "Integrating Fireteam with Cursor..."
+      mkdir -p "$project_root/.cursor/rules"
+      cat > "$project_root/.cursor/rules/fireteam.mdc" << 'CURSORRULE'
+---
+description: Fireteam multi-agent coordination protocol
+globs: **/*
+alwaysApply: true
+---
+
+This project uses Fireteam for multi-agent coordination via `.fireteam/` folder.
+
+Before starting work:
+1. Read `.fireteam/MISSION.md` for the mission
+2. Read `.fireteam/CONVENTIONS.md` for rules
+3. Read `.fireteam/BOARD.md` for your assigned tasks
+4. Read your SOUL file in `.fireteam/checkpoints/[callsign]-soul.md`
+5. Read `.fireteam/INTEL.md` for project facts
+
+During work:
+- Check `checked_out_by` before claiming a task
+- Checkpoint to `.fireteam/checkpoints/[you].md` every 15 min
+- Write handoffs to `.fireteam/handoffs/` when your work feeds another agent
+- Append to `.fireteam/memory/YYYY-MM-DD.md` field log
+- Update `.fireteam/BOARD.md` when task status changes
+- Stay in scope — don't modify other agents' files
+
+Security: Never read .env files, never copy credentials into .fireteam/, never access files outside this project.
+CURSORRULE
+      echo "  ✓ Created .cursor/rules/fireteam.mdc"
+      ;;
+
+    aider)
+      echo "Integrating Fireteam with Aider..."
+      local conv_file="$project_root/CONVENTIONS.md"
+      if [ -f "$conv_file" ]; then
+        echo "" >> "$conv_file"
+        echo "## Fireteam Coordination" >> "$conv_file"
+        echo "" >> "$conv_file"
+        echo "This project uses Fireteam. Read .fireteam/MISSION.md, CONVENTIONS.md, BOARD.md, and your SOUL file before working. Checkpoint every 15 min. Write handoffs when your work feeds another agent. Never modify other agents' files." >> "$conv_file"
+        echo "  ✓ Appended Fireteam section to CONVENTIONS.md"
+      else
+        cat > "$conv_file" << 'AIDERCONV'
+# Conventions
+
+## Fireteam Coordination
+
+This project uses Fireteam for multi-agent coordination via `.fireteam/` folder.
+
+Before starting: Read .fireteam/MISSION.md, CONVENTIONS.md, BOARD.md, and your SOUL file.
+During work: Checkpoint every 15 min, write handoffs, update BOARD.md, stay in scope.
+Security: Never read .env, never copy credentials into .fireteam/, never access files outside this project.
+AIDERCONV
+        echo "  ✓ Created CONVENTIONS.md with Fireteam section"
+      fi
+      ;;
+
+    windsurf)
+      echo "Integrating Fireteam with Windsurf..."
+      cat > "$project_root/.windsurfrules" << 'WINDRULES'
+This project uses Fireteam for multi-agent coordination via .fireteam/ folder.
+
+Before starting: Read .fireteam/MISSION.md, CONVENTIONS.md, BOARD.md, and your SOUL file in .fireteam/checkpoints/.
+During work: Check checked_out_by before claiming tasks. Checkpoint every 15 min. Write handoffs when your work feeds another agent. Update BOARD.md. Stay in scope.
+Security: Never read .env files, never copy credentials into .fireteam/, never access files outside this project.
+WINDRULES
+      echo "  ✓ Created .windsurfrules"
+      ;;
+
+    *)
+      echo "Usage: fireteam integrate <tool>"
+      echo ""
+      echo "Supported tools:"
+      echo "  claude-code    Generate CLAUDE.md + hooks + .claude/settings.json"
+      echo "  cursor         Generate .cursor/rules/fireteam.mdc"
+      echo "  aider          Append to CONVENTIONS.md"
+      echo "  windsurf       Generate .windsurfrules"
+      ;;
+  esac
+}
+
 cmd_help() {
   cat <<'EOF'
 
@@ -241,6 +421,12 @@ cmd_help() {
   fireteam pro                            Alias for fireteam hq
   fireteam dashboard                      Generate static dashboard.html
 
+  INTEGRATIONS:
+  fireteam integrate claude-code          CLAUDE.md + hooks + settings
+  fireteam integrate cursor               .cursor/rules/fireteam.mdc
+  fireteam integrate aider                CONVENTIONS.md
+  fireteam integrate windsurf             .windsurfrules
+
 EOF
 }
 
@@ -256,6 +442,7 @@ case "${1:-help}" in
   recover)    shift; cmd_recover "$@" ;;
   hq)         cmd_hq "$@" ;;
   pro)        cmd_pro "$@" ;;
+  integrate)  shift; cmd_integrate "$@" ;;
   dashboard)  cmd_dashboard ;;
   status)     cmd_status ;;
   help|--help|-h) cmd_help ;;
